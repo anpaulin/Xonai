@@ -176,6 +176,7 @@ public class Main {
 
         return output;
     }
+    private static final byte byteRepA = (byte) 'A';
     public static boolean isEqualToA(int rowId, StringColumn str) {
         // TODO: Check if string is equal to "A" at given row id. Not using String is preferred.
 
@@ -187,12 +188,12 @@ public class Main {
         // Note: If we assume the default charset is always UTF-8, then we can just cast to a byte...
         // otherwise we need to perform the correct conversion.
         else {
-            return str.buffer[str.offset[rowId]] == (byte) 'A';
+            return str.buffer[str.offset[rowId]] == byteRepA;
         }
     }
 
-    private static byte[] PROMO = "PROMO".getBytes();
-    private static byte[] SUMMER = "SUMMER".getBytes();
+    private static final byte[] PROMO = "PROMO".getBytes();
+    private static final byte[] SUMMER = "SUMMER".getBytes();
 
     public static boolean isLikePromoSummer(int rowId, StringColumn str) {
 // TODO: Check if comment is like "PROMO%SUMMER" at given row id. Not using regex is preferred.
@@ -204,8 +205,8 @@ public class Main {
         if(length < 11) {
             return false;
         } else {
-
-            for(short i = 0; i < SUMMER.length; i++){
+            //SHORT.length is always 6
+            for(int i = 0; i < 6; i++){
                 //check if end matches "SUMMER"
                 if(str.buffer[str.offset[rowId] + length - 1 - i] != SUMMER[5 - i]){
                     return false;
