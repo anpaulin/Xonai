@@ -88,11 +88,21 @@ public class Main {
      * Feel free to create new functions but keep existing ones.
      */
     public static void main(String[] args) {
+
         InputBatch input = input();
-        FilteredBatch filtered = filter(input);
-        AggregatedBatch aggregated = aggregate(filtered);
-        assertResult(5.8893854d, aggregated.discount_ratio[0], "discount ratio");
-        assertResult(17.9d, aggregated.avg_price[0], "avg price");
+        long iterations = 100000000;
+        long startTime = System.currentTimeMillis();
+
+        for(int i = 0; i < iterations; i++) {
+            FilteredBatch filtered = filter(input);
+            AggregatedBatch aggregated = aggregate(filtered);
+
+            assertResult(5.8893854d, aggregated.discount_ratio[0], "discount ratio");
+            assertResult(17.9d, aggregated.avg_price[0], "avg price");
+        }
+        long endTime = System.currentTimeMillis();
+        System.out.println("AVG TIME IS: \n" + (endTime - startTime));
+
     }
     public static InputBatch input() {
         InputBatch output = new InputBatch();
@@ -207,11 +217,13 @@ public class Main {
         } else {
             //SHORT.length is always 6
             for(int i = 0; i < 6; i++){
+                int offset = str.offset[rowId];
+
                 //check if end matches "SUMMER"
-                if(str.buffer[str.offset[rowId] + length - 1 - i] != SUMMER[5 - i]){
+                if(str.buffer[offset + length - 1 - i] != SUMMER[5 - i]){
                     return false;
                     //if it does match & we aren't out of bounds, check beginning is "PROMO"
-                } else if(i < 5 && str.buffer[str.offset[rowId] + i] != PROMO[i]){
+                } else if(i < 5 && str.buffer[offset + i] != PROMO[i]){
                         //check if beginning bytes match "PROMO"
                        return false;
                 }
@@ -220,6 +232,35 @@ public class Main {
             return true;
         }
     }
+
+    //Since we know that the length of SUMMER is always 6, we can actually unroll the entire loop.
+    //By doing this we eliminate the loop control and test instructions
+    //Also, since we know the byte value of each index of "PROMO" and "SUMMER", we can statically define them
+    public static boolean isLikePromoSummerUnrolled(int rowId, StringColumn str) {
+        //A comment is determined to be 'like' "PROMO%SUMMER" if it is atleast length 11 (PROMO = 5 & SUMMER = 6)
+        //AND the first 5 bytes match the bytes of "PROMO" and the last 6 bytes match "SUMMER"
+
+        int length = str.length[rowId];
+
+        if(length < 11) {
+            return false;
+        } else {
+            int offset = str.offset[rowId];
+
+            return str.buffer[offset + length - 1]  == 82 &&
+                    str.buffer[offset + length - 2] == 69 &&
+                    str.buffer[offset + length - 3] == 77 &&
+                    str.buffer[offset + length - 4] == 77 &&
+                    str.buffer[offset + length - 5] == 85 &&
+                    str.buffer[offset + length - 6] == 83 &&
+                    str.buffer[offset]              == 80 &&
+                    str.buffer[offset + 1]          == 82 &&
+                    str.buffer[offset + 2]          == 79 &&
+                    str.buffer[offset + 3]          == 77 &&
+                    str.buffer[offset + 4]          == 79;
+        }
+    }
+
     /**
 
      Sr. Software Engineer Exercise 4
