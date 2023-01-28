@@ -88,21 +88,11 @@ public class Main {
      * Feel free to create new functions but keep existing ones.
      */
     public static void main(String[] args) {
-
         InputBatch input = input();
-        long iterations = 100000000;
-        long startTime = System.currentTimeMillis();
-
-        for(int i = 0; i < iterations; i++) {
-            FilteredBatch filtered = filter(input);
-            AggregatedBatch aggregated = aggregate(filtered);
-
-            assertResult(5.8893854d, aggregated.discount_ratio[0], "discount ratio");
-            assertResult(17.9d, aggregated.avg_price[0], "avg price");
-        }
-        long endTime = System.currentTimeMillis();
-        System.out.println("AVG TIME IS: \n" + (endTime - startTime));
-
+        FilteredBatch filtered = filter(input);
+        AggregatedBatch aggregated = aggregate(filtered);
+        assertResult(5.8893854d, aggregated.discount_ratio[0], "discount ratio");
+        assertResult(17.9d, aggregated.avg_price[0], "avg price");
     }
     public static InputBatch input() {
         InputBatch output = new InputBatch();
@@ -202,43 +192,10 @@ public class Main {
         }
     }
 
-    private static final byte[] PROMO = "PROMO".getBytes();
-    private static final byte[] SUMMER = "SUMMER".getBytes();
-
     public static boolean isLikePromoSummer(int rowId, StringColumn str) {
-// TODO: Check if comment is like "PROMO%SUMMER" at given row id. Not using regex is preferred.
         //A comment is determined to be 'like' "PROMO%SUMMER" if it is atleast length 11 (PROMO = 5 & SUMMER = 6)
         //AND the first 5 bytes match the bytes of "PROMO" and the last 6 bytes match "SUMMER"
-
-        int length = str.length[rowId];
-
-        if(length < 11) {
-            return false;
-        } else {
-            //SHORT.length is always 6
-            for(int i = 0; i < 6; i++){
-                int offset = str.offset[rowId];
-
-                //check if end matches "SUMMER"
-                if(str.buffer[offset + length - 1 - i] != SUMMER[5 - i]){
-                    return false;
-                    //if it does match & we aren't out of bounds, check beginning is "PROMO"
-                } else if(i < 5 && str.buffer[offset + i] != PROMO[i]){
-                        //check if beginning bytes match "PROMO"
-                       return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
-    //Since we know that the length of SUMMER is always 6, we can actually unroll the entire loop.
-    //By doing this we eliminate the loop control and test instructions
-    //Also, since we know the byte value of each index of "PROMO" and "SUMMER", we can statically define them
-    public static boolean isLikePromoSummerUnrolled(int rowId, StringColumn str) {
-        //A comment is determined to be 'like' "PROMO%SUMMER" if it is atleast length 11 (PROMO = 5 & SUMMER = 6)
-        //AND the first 5 bytes match the bytes of "PROMO" and the last 6 bytes match "SUMMER"
+        //Since we know the byte value of each index of "PROMO" and "SUMMER", we can statically define them
 
         int length = str.length[rowId];
 
