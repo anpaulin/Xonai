@@ -117,9 +117,7 @@ public class Main {
 // Contains for each row the index in the discount dictionary.
         int[] ids = { 2, 0, 3, 1, 0, 2, 2, 1, 3, 1 };
 // TODO: Replace with decoded discount values from `ids` and `dictionary`.
-//        double[] expected = new double[]{ 0.07d, 0.04d, 0.08d, 0.05d, 0.04d, 0.07d, 0.07d, 0.05d, 0.08d, 0.05d };
 
-// I'm assuming the instructions are only asking me to fill the contents of the expected array at runtime?
         double[] expected = new double[ids.length];
 
         for(int i = 0; i < expected.length; i++){
@@ -127,21 +125,6 @@ public class Main {
         }
 
         return expected;
-    }
-    private static List<Byte> convertBytesToList(byte[] bytes) {
-        final List<Byte> list = new ArrayList<>();
-        for (byte b : bytes) {
-            list.add(b);
-        }
-        return list;
-    }
-
-    private static byte[] convertByteListToArray(List<Byte> bytes) {
-        byte[] byteArray = new byte[bytes.size()];
-        for (int index = 0; index < bytes.size(); index++) {
-            byteArray[index] = bytes.get(index);
-        }
-        return byteArray;
     }
 
     /**
@@ -179,26 +162,19 @@ public class Main {
         output.comment.buffer = new byte[newRowSize];
 
         for(int i = 0; i < newRowSize; i++){
-            output.quantity[i] = input.quantity[keepRows.get(i)];
-            output.price[i] = input.price[keepRows.get(i)];
-            output.discount[i] = input.discount[keepRows.get(i)];
-            output.status.offset[i] = input.status.offset[keepRows.get(i)];
-            output.status.length[i] = input.status.length[keepRows.get(i)];
-            output.status.buffer[i] = input.status.buffer[keepRows.get(i)];
-            output.comment.offset[i] = input.comment.offset[keepRows.get(i)];
-            output.comment.length[i] = input.comment.length[keepRows.get(i)];
-            output.comment.buffer[i] = input.comment.buffer[keepRows.get(i)];
+            int validRow = keepRows.get(i);
+
+            output.quantity[i] = input.quantity[validRow];
+            output.price[i] = input.price[validRow];
+            output.discount[i] = input.discount[validRow];
+            output.status.offset[i] = input.status.offset[validRow];
+            output.status.length[i] = input.status.length[validRow];
+            output.status.buffer[i] = input.status.buffer[validRow];
+            output.comment.offset[i] = input.comment.offset[validRow];
+            output.comment.length[i] = input.comment.length[validRow];
+            output.comment.buffer[i] = input.comment.buffer[validRow];
         }
 
-//        output.quantity = input.quantity;
-//        output.price = input.price;
-//        output.discount = input.discount;
-//        output.status.offset = input.status.offset;
-//        output.status.length = input.status.length;
-//        output.status.buffer = input.status.buffer;
-//        output.comment.offset = input.comment.offset;
-//        output.comment.length = input.comment.length;
-//        output.comment.buffer = input.comment.buffer;
         return output;
     }
     public static boolean isEqualToA(int rowId, StringColumn str) {
@@ -256,14 +232,15 @@ public class Main {
         AggregatedBatch output = new AggregatedBatch();
         double sumPaid = 0;
         double sumPrice = 0;
+        int numRows = input.numRows;
 
-        for(int i = 0; i < input.numRows; i++){
+        for(int i = 0; i < numRows; i++){
             sumPaid += input.price[i] * input.discount[i];
             sumPrice += input.price[i];
         }
 
         output.discount_ratio = new double[]{100*(sumPaid/sumPrice)};
-        output.avg_price = new double[]{sumPrice/input.numRows};
+        output.avg_price = new double[]{sumPrice/numRows};
         return output;
     }
     private static void assertResult(double expected, double actual, String description) {
