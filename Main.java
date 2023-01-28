@@ -137,7 +137,7 @@ public class Main {
 
     public static FilteredBatch filter(InputBatch input) {
         FilteredBatch output = new FilteredBatch();
-// TODO: Replace with filter computation.
+    // TODO: Replace with filter computation.
 
         ArrayList<Integer> keepRows = new ArrayList<>();
 
@@ -176,7 +176,7 @@ public class Main {
 
         return output;
     }
-    private static final byte byteRepA = (byte) 'A';
+
     public static boolean isEqualToA(int rowId, StringColumn str) {
         // TODO: Check if string is equal to "A" at given row id. Not using String is preferred.
 
@@ -185,10 +185,8 @@ public class Main {
         if(str.length[rowId] != 1) {
             return false;
         }
-        // Note: If we assume the default charset is always UTF-8, then we can just cast to a byte...
-        // otherwise we need to perform the correct conversion.
         else {
-            return str.buffer[str.offset[rowId]] == byteRepA;
+            return str.buffer[str.offset[rowId]] == 65;
         }
     }
 
@@ -204,7 +202,7 @@ public class Main {
         } else {
             int offset = str.offset[rowId];
 
-            return str.buffer[offset + length - 1]  == 82 &&
+            return  str.buffer[offset + length - 1] == 82 &&
                     str.buffer[offset + length - 2] == 69 &&
                     str.buffer[offset + length - 3] == 77 &&
                     str.buffer[offset + length - 4] == 77 &&
@@ -233,8 +231,9 @@ public class Main {
         int numRows = input.numRows;
 
         for(int i = 0; i < numRows; i++){
-            sumPaid += input.price[i] * input.discount[i];
-            sumPrice += input.price[i];
+            double price = input.price[i];
+            sumPaid += price * input.discount[i];
+            sumPrice += price;
         }
 
         output.discount_ratio = new double[]{100*(sumPaid/sumPrice)};
