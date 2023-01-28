@@ -156,44 +156,39 @@ public class Main {
         FilteredBatch output = new FilteredBatch();
 // TODO: Replace with filter computation.
 
-        List<Integer> quantity = new ArrayList<>(IntStream.of(input.quantity).boxed().toList());
-        List<Double> price = new ArrayList<>(DoubleStream.of(input.price).boxed().toList());
-        List<Double> discount = new ArrayList<>(DoubleStream.of(input.discount).boxed().toList());
-        List<Integer> offset = new ArrayList<>(IntStream.of(input.status.offset).boxed().toList());
-        List<Integer> length = new ArrayList<>(IntStream.of(input.status.length).boxed().toList());
-        List<Byte> statusBuffer = convertBytesToList(input.status.buffer);
-        List<Integer> commentOffset = new ArrayList<>(IntStream.of(input.comment.offset).boxed().toList());
-        List<Integer> commentLength = new ArrayList<>(IntStream.of(input.comment.length).boxed().toList());
-        List<Byte> commentBuffer = convertBytesToList(input.status.buffer);
+        ArrayList<Integer> keepRows = new ArrayList<>();
 
-        int removeRows = 0;
         for(int i = 0; i < input.numRows; i++){
             boolean keepRow = isLikePromoSummer(i, input.comment) || (input.discount[i] >= 0.05 && input.discount[i] <= 0.07 && input.quantity[i] < 24 && isEqualToA(i, input.status));
-            if(!keepRow) {
-                removeRows++;
-
-                price.set(i, null);
-                quantity.set(i, null);
-                discount.set(i, null);
-                offset.set(i, null);
-                length.set(i, null);
-                statusBuffer.set(i, null);
-                commentOffset.set(i, null);
-                commentLength.set(i, null);
-                commentBuffer.set(i, null);
+            if(keepRow) {
+                keepRows.add(i);
             }
         }
 
-        output.numRows = input.numRows - removeRows;
-        output.quantity = quantity.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).toArray();
-        output.price = price.stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).toArray();
-        output.discount = discount.stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).toArray();
-        output.status.offset = offset.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).toArray();
-        output.status.length = length.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).toArray();
-        output.status.buffer = convertByteListToArray(statusBuffer.stream().filter(Objects::nonNull).toList());
-        output.comment.offset = commentOffset.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).toArray();
-        output.comment.length = commentLength.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).toArray();
-        output.comment.buffer = convertByteListToArray(commentBuffer.stream().filter(Objects::nonNull).toList());
+        int newRowSize = keepRows.size();
+
+        output.numRows = newRowSize;
+        output.quantity = new int[newRowSize];
+        output.price = new double[newRowSize];
+        output.discount = new double[newRowSize];
+        output.status.offset = new int[newRowSize];
+        output.status.length = new int[newRowSize];
+        output.status.buffer = new byte[newRowSize];
+        output.comment.offset = new int[newRowSize];
+        output.comment.length = new int[newRowSize];
+        output.comment.buffer = new byte[newRowSize];
+
+        for(int i = 0; i < newRowSize; i++){
+            output.quantity[i] = input.quantity[keepRows.get(i)];
+            output.price[i] = input.price[keepRows.get(i)];
+            output.discount[i] = input.discount[keepRows.get(i)];
+            output.status.offset[i] = input.status.offset[keepRows.get(i)];
+            output.status.length[i] = input.status.length[keepRows.get(i)];
+            output.status.buffer[i] = input.status.buffer[keepRows.get(i)];
+            output.comment.offset[i] = input.comment.offset[keepRows.get(i)];
+            output.comment.length[i] = input.comment.length[keepRows.get(i)];
+            output.comment.buffer[i] = input.comment.buffer[keepRows.get(i)];
+        }
 
 //        output.quantity = input.quantity;
 //        output.price = input.price;
