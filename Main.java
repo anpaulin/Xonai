@@ -142,8 +142,7 @@ public class Main {
         ArrayList<Integer> keepRows = new ArrayList<>();
 
         for(int i = 0; i < input.numRows; i++){
-            boolean keepRow = isLikePromoSummer(i, input.comment) || (input.discount[i] >= 0.05 && input.discount[i] <= 0.07 && input.quantity[i] < 24 && isEqualToA(i, input.status));
-            if(keepRow) {
+            if(isLikePromoSummer(i, input.comment) || (input.discount[i] >= 0.05 && input.discount[i] <= 0.07 && input.quantity[i] < 24 && isEqualToA(i, input.status))) {
                 keepRows.add(i);
             }
         }
