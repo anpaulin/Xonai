@@ -1,8 +1,3 @@
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-
 /**
  * This program computes the following SQL query:
  * select
@@ -91,32 +86,37 @@ public class Main {
         InputBatch input = input();
         FilteredBatch filtered = filter(input);
         AggregatedBatch aggregated = aggregate(filtered);
+
         assertResult(5.8893854d, aggregated.discount_ratio[0], "discount ratio");
         assertResult(17.9d, aggregated.avg_price[0], "avg price");
     }
     public static InputBatch input() {
         InputBatch output = new InputBatch();
+
         output.numRows = 10;
-
-        //Sr. Software Engineer Exercise 3
-
         output.quantity = new int[]{ 6, 18, 6, 30, 24, 12, 18, 6, 24, 12 };
         output.price = new double[]{ 19.9d, 24.9d, 9.9d, 14.9d, 9.9d, 19.9d, 24.9d, 19.9d, 9.9d, 14.9 };
         output.discount = inputDiscount();
+
         output.status.offset = new int[]{ 0, 1, 2, 4, 5, 6, 7, 8, 9, 10 };
         output.status.length = new int[]{ 1, 1, 2, 1, 1, 1, 1, 1, 1, 1 };
         output.status.buffer = "AAARNAANAAA".getBytes();
+
         output.comment.offset = new int[]{ 0, 0, 0, 5, 0, 0, 0, 0, 20, 0 };
         output.comment.length = new int[]{ 5, 0, 0, 15, 5, 0, 0, 0, 12, 5 };
         output.comment.buffer = "PROMOPROMO IN SUMMERPROMO WINTER".getBytes();
+
         return output;
     }
     public static double[] inputDiscount() {
-// Possible discount values.
+        // Possible discount values.
         double[] dictionary = { 0.04d, 0.05d, 0.07d, 0.08d };
-// Contains for each row the index in the discount dictionary.
+        // Contains for each row the index in the discount dictionary.
         int[] ids = { 2, 0, 3, 1, 0, 2, 2, 1, 3, 1 };
-// TODO: Replace with decoded discount values from `ids` and `dictionary`.
+
+        // TODO: Replace with decoded discount values from `ids` and `dictionary`.
+        // Instructions seem to ask to decode these values at runtime, but if they were left defined at compile time,
+        // the performance would have been faster because we don't need any control structures (for loop)
 
         double[] expected = new double[ids.length];
 
@@ -137,17 +137,20 @@ public class Main {
 
     public static FilteredBatch filter(InputBatch input) {
         FilteredBatch output = new FilteredBatch();
-    // TODO: Replace with filter computation.
+        // TODO: Replace with filter computation.
 
-        ArrayList<Integer> keepRows = new ArrayList<>();
+        // The # of filtered rows must be less than or equal to the number of input rows
+        // Initialize a new array (w/size of input row) to track valid row indexes to be copied to the output
+        int numRows = input.numRows;
+        int[] keepRows = new int[numRows];
+        int newRowSize = 0;
 
-        for(int i = 0; i < input.numRows; i++){
-            if(isLikePromoSummer(i, input.comment) || (input.discount[i] >= 0.05 && input.discount[i] <= 0.07 && input.quantity[i] < 24 && isEqualToA(i, input.status))) {
-                keepRows.add(i);
+        for(int i = 0; i < numRows; i++){
+            // Left side of the boolean OR is likely faster to eval & input data shows more likely to pass
+            if((input.discount[i] >= 0.05 && input.discount[i] <= 0.07 && input.quantity[i] < 24 && isEqualToA(i, input.status)) || isLikePromoSummer(i, input.comment)) {
+                keepRows[newRowSize++] = i;
             }
         }
-
-        int newRowSize = keepRows.size();
 
         output.numRows = newRowSize;
         output.quantity = new int[newRowSize];
@@ -160,8 +163,9 @@ public class Main {
         output.comment.length = new int[newRowSize];
         output.comment.buffer = new byte[newRowSize];
 
+        // Copy valid row data into output
         for(int i = 0; i < newRowSize; i++){
-            int validRow = keepRows.get(i);
+            int validRow = keepRows[i];
 
             output.quantity[i] = input.quantity[validRow];
             output.price[i] = input.price[validRow];
@@ -180,20 +184,17 @@ public class Main {
     public static boolean isEqualToA(int rowId, StringColumn str) {
         // TODO: Check if string is equal to "A" at given row id. Not using String is preferred.
 
-        // if the length inside the buffer != 1, we know it's string representation cannot be "A"
-        // otherwise, compare byte value to determine if it's A
-        if(str.length[rowId] != 1) {
-            return false;
-        }
-        else {
-            return str.buffer[str.offset[rowId]] == 65;
-        }
+        // The string representation can only be equal to "A" if the length inside the corresponding buffer is 1
+        // AND the byte value in the buffer is equal to the ASCII value of A. ('A' = 65)
+        return str.buffer[str.offset[rowId]] == 65 && str.length[rowId] == 1;
     }
 
     public static boolean isLikePromoSummer(int rowId, StringColumn str) {
-        //A comment is determined to be 'like' "PROMO%SUMMER" if it is atleast length 11 (PROMO = 5 & SUMMER = 6)
-        //AND the first 5 bytes match the bytes of "PROMO" and the last 6 bytes match "SUMMER"
-        //Since we know the byte value of each index of "PROMO" and "SUMMER", we can statically define them
+        // TODO: Check if comment is like "PROMO%SUMMER" at given row id. Not using regex is preferred.
+
+        // A comment is determined to be 'like' "PROMO%SUMMER" if it is at least length 11 (PROMO = 5 & SUMMER = 6)
+        // AND the first 5 bytes match the bytes of "PROMO" and the last 6 bytes match "SUMMER"
+        // Since we know the byte value of each index of "PROMO" and "SUMMER", we can statically define them
 
         int length = str.length[rowId];
 
@@ -202,17 +203,17 @@ public class Main {
         } else {
             int offset = str.offset[rowId];
 
-            return  str.buffer[offset + length - 1] == 82 &&
-                    str.buffer[offset + length - 2] == 69 &&
-                    str.buffer[offset + length - 3] == 77 &&
-                    str.buffer[offset + length - 4] == 77 &&
-                    str.buffer[offset + length - 5] == 85 &&
-                    str.buffer[offset + length - 6] == 83 &&
-                    str.buffer[offset]              == 80 &&
-                    str.buffer[offset + 1]          == 82 &&
-                    str.buffer[offset + 2]          == 79 &&
-                    str.buffer[offset + 3]          == 77 &&
-                    str.buffer[offset + 4]          == 79;
+            return  str.buffer[offset + length - 6] == 83 && //S
+                    str.buffer[offset + length - 5] == 85 && //U
+                    str.buffer[offset + length - 3] == 77 && //M
+                    str.buffer[offset + length - 4] == 77 && //M
+                    str.buffer[offset + length - 2] == 69 && //E
+                    str.buffer[offset + length - 1] == 82 && //R
+                    str.buffer[offset]              == 80 && //P
+                    str.buffer[offset + 1]          == 82 && //R
+                    str.buffer[offset + 2]          == 79 && //O
+                    str.buffer[offset + 3]          == 77 && //M
+                    str.buffer[offset + 4]          == 79;   //O
         }
     }
 
@@ -236,6 +237,7 @@ public class Main {
             sumPrice += price;
         }
 
+        output.numRows = numRows;
         output.discount_ratio = new double[]{100*(sumPaid/sumPrice)};
         output.avg_price = new double[]{sumPrice/numRows};
         return output;
